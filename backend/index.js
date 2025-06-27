@@ -1,5 +1,5 @@
 import express from "express";
-import cors from 'cors'
+import cors from 'cors';
 import dotenv from "dotenv";
 import { connectDb } from "./database/db.js";
 import cloudinary from "cloudinary";
@@ -11,31 +11,31 @@ import { app, server } from "./socket/socket.js";
 import path from "path";
 import axios from 'axios';
 
-const url = `http://localhost:7000`;
-// const frontendUrl = process.env.CORS_ORIGIN
-const interval = 30000;
-
-function reloadWebsite() {
-  axios
-    .get(url)
-    .then((response) => {
-      console.log(
-        `Reloaded at ${new Date().toISOString()}: Status Code ${
-          response.status
-        }`
-      );
-    })
-    .catch((error) => {
-      console.error(
-        `Error reloading at ${new Date().toISOString()}:`,
-        error.message
-      );
-    });
-}
-
-setInterval(reloadWebsite, interval);
-
 dotenv.config();
+
+// Remove or guard local-only reload ping — NOT for production
+// const url = `http://localhost:7000`;
+// const interval = 30000;
+
+// function reloadWebsite() {
+//   axios
+//     .get(url)
+//     .then((response) => {
+//       console.log(
+//         `Reloaded at ${new Date().toISOString()}: Status Code ${response.status}`
+//       );
+//     })
+//     .catch((error) => {
+//       console.error(
+//         `Error reloading at ${new Date().toISOString()}:`,
+//         error.message
+//       );
+//     });
+// }
+
+// if (process.env.NODE_ENV !== "production") {
+//   setInterval(reloadWebsite, interval);
+// }
 
 cloudinary.v2.config({
   cloud_name: process.env.Cloudinary_Cloud_Name,
@@ -43,7 +43,7 @@ cloudinary.v2.config({
   api_secret: process.env.Cloudinary_Secret,
 });
 
-//using middlewares
+// Middlewares
 app.use(express.json());
 app.use(cookieParser());
 app.use(
@@ -54,14 +54,10 @@ app.use(
   })
 );
 
-const port = process.env.PORT;
-
-// to get all chats of user
+// Routes - inline
 app.get("/api/messages/chats", isAuth, async (req, res) => {
   try {
-    const chats = await Chat.find({
-      users: req.user._id,
-    }).populate({
+    const chats = await Chat.find({ users: req.user._id }).populate({
       path: "users",
       select: "name profilePic",
     });
@@ -74,53 +70,53 @@ app.get("/api/messages/chats", isAuth, async (req, res) => {
 
     res.json(chats);
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 });
 
-// to get all users
 app.get("/api/user/all", isAuth, async (req, res) => {
   try {
     const search = req.query.search || "";
     const users = await User.find({
-      name: {
-        $regex: search,
-        $options: "i",
-      },
+      name: { $regex: search, $options: "i" },
       _id: { $ne: req.user._id },
     }).select("-password");
 
     res.json(users);
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 });
 
-// importing routes
+// Imported routes
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
 
-//using routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/post", postRoutes);
 app.use("/api/messages", messageRoutes);
 
+// Serve frontend static files
 const __dirname = path.resolve();
-
 app.use(express.static(path.join(__dirname, "/frontend/dist")));
 
+// ✅ Health check route for Render
+app.get("/", (req, res) => {
+  res.send("Server is running ✅");
+});
+
+// Catch-all to serve index.html
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
 });
 
+// ✅ Correct: use Render's dynamic PORT
+const port = process.env.PORT || 5000;
+
 server.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`🚀 Server is running on http://localhost:${port}`);
   connectDb();
 });
