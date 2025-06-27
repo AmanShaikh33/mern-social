@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "../axios"
 import { createContext, useContext, useState } from "react";
 import toast from "react-hot-toast";
 
