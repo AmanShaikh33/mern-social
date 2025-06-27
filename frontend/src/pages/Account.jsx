@@ -6,7 +6,7 @@ import { PostData } from "../context/PostContext";
 import PostCard from "../components/PostCard";
 import { FaArrowDownLong, FaArrowUp } from "react-icons/fa6";
 import Modal from "../components/Modal";
-import axios from "axios";
+import axios from "../axios"
 import { Loading } from "../components/Loading";
 import { CiEdit } from "react-icons/ci";
 import toast from "react-hot-toast";
